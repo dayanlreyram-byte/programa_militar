@@ -63,7 +63,8 @@ def _desencriptar_fila(fila: dict) -> Ingreso:
         estado=fila["estado"],
         autorizado_por=fila["autorizado_por"],
         fecha_autorizacion=fila["fecha_autorizacion"],
-        nombre_completo_personal=f'{fila["nombres_personal"]} {fila["apellidos_personal"]}',
+        nombre_completo_personal=(f'{cripto.desencriptar(fila["nombres_personal"])} '
+                                   f'{cripto.desencriptar(fila["apellidos_personal"])}'),
     )
 
 

@@ -90,6 +90,17 @@ def iniciar_sesion(username: str, password: str):
     return usuario["rol"]
 
 
+def verificar_password_actual(username: str, password: str) -> bool:
+    """Re-verifica la contraseña de la sesión ya iniciada (sin generar
+    un nuevo inicio de sesión ni tocar la bitácora), para desbloquear
+    vistas que requieren confirmar identidad antes de mostrar datos
+    desencriptados."""
+    usuario = repo.obtener_usuario(username)
+    if usuario is None:
+        return False
+    return hashing.verificar_password(password, usuario["password_hash"], usuario["salt"])
+
+
 def listar_usuarios():
     return repo.listar_usuarios()
 

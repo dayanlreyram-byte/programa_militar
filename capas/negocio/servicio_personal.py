@@ -152,6 +152,23 @@ def listar_personal(rol: str):
     return resultado
 
 
+def listar_personal_hoja_vida(desbloqueado: bool):
+    """Lista el personal para la ventana de Hoja de Vida. A diferencia de
+    `listar_personal` (que enmascara según el rol), aquí el enmascarado
+    de los campos de hoja de vida depende de si el usuario confirmó su
+    contraseña para desbloquear la vista, sin importar el rol: tanto
+    admin como operador pueden ver los datos reales si se autentican."""
+    filas = repo.listar_personal()
+    resultado = []
+    for fila in filas:
+        persona = _desencriptar_fila(fila)
+        if not desbloqueado and persona.hoja_vida_completa:
+            for campo in CAMPOS_HOJA_VIDA:
+                setattr(persona, campo, permisos.enmascarar(getattr(persona, campo)))
+        resultado.append(persona)
+    return resultado
+
+
 def obtener_personal_desencriptado(personal_id: int) -> PersonalMilitar:
     """Uso interno (p. ej. para generar el Apartado 1); ignora permisos
     de visualización porque no expone el resultado directamente al operador."""

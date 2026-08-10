@@ -10,7 +10,7 @@ from capas.datos.conexion_bd import obtener_conexion
 def existe_usuario(username):
     conn = obtener_conexion()
     fila = conn.execute(
-        "SELECT 1 FROM usuarios WHERE username = ?", (username,)
+        "SELECT 1 FROM usuarios WHERE username = ? COLLATE NOCASE", (username,)
     ).fetchone()
     conn.close()
     return fila is not None
@@ -41,7 +41,7 @@ def insertar_usuario(username, password_hash, salt, clave_recuperacion_hash,
 def actualizar_password(username, nuevo_password_hash, nuevo_salt):
     conn = obtener_conexion()
     conn.execute(
-        "UPDATE usuarios SET password_hash = ?, salt = ? WHERE username = ?",
+        "UPDATE usuarios SET password_hash = ?, salt = ? WHERE username = ? COLLATE NOCASE",
         (nuevo_password_hash, nuevo_salt, username),
     )
     conn.commit()
@@ -51,7 +51,7 @@ def actualizar_password(username, nuevo_password_hash, nuevo_salt):
 def obtener_usuario(username):
     conn = obtener_conexion()
     fila = conn.execute(
-        "SELECT * FROM usuarios WHERE username = ?", (username,)
+        "SELECT * FROM usuarios WHERE username = ? COLLATE NOCASE", (username,)
     ).fetchone()
     conn.close()
     return dict(fila) if fila else None
@@ -68,6 +68,6 @@ def listar_usuarios():
 
 def actualizar_rol(username, nuevo_rol):
     conn = obtener_conexion()
-    conn.execute("UPDATE usuarios SET rol = ? WHERE username = ?", (nuevo_rol, username))
+    conn.execute("UPDATE usuarios SET rol = ? WHERE username = ? COLLATE NOCASE", (nuevo_rol, username))
     conn.commit()
     conn.close()

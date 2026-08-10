@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from capas.presentacion import estilos as est
 from capas.negocio import servicio_personal as servicio
+from capas.negocio import servicio_autenticacion as auth
 
 
 GENEROS = ["Masculino", "Femenino", "Otro"]
@@ -25,6 +26,7 @@ class VistaHojaVida(ttk.Frame):
         super().__init__(padre, style="Fondo.TFrame", padding=24)
         self.controlador = controlador
         self._mapa_opciones = {}
+        self._desbloqueado = False
 
         ttk.Label(self, text="Hoja de Vida del Personal",
                   style="Titulo.TLabel").pack(anchor="w", pady=(0, 4))
@@ -100,6 +102,9 @@ class VistaHojaVida(ttk.Frame):
             side="left")
         ttk.Button(cabecera_lista, text="🔄 Actualizar", style="Secundario.TButton",
                    command=self._refrescar_lista).pack(side="right")
+        self.boton_candado = ttk.Button(cabecera_lista, text="🔒 Desbloquear datos",
+                                         style="Info.TButton", command=self._alternar_bloqueo)
+        self.boton_candado.pack(side="right", padx=(0, 8))
 
         columnas = ("id", "nombre", "cedula", "telefono", "ciudad", "genero", "edad", "estado")
         self.tabla = ttk.Treeview(interior_lista, columns=columnas, show="headings", height=14)
@@ -139,9 +144,10 @@ class VistaHojaVida(ttk.Frame):
     def _al_seleccionar_persona(self, _evento=None):
         etiqueta_sel = self.combo_personal.get()
         personal_id = self._mapa_opciones.get(etiqueta_sel)
-        if personal_id is None or self.controlador.rol_actual != "admin":
-            # El operador no ve datos ya cargados (evita exponer datos sensibles);
-            # solo puede escribir/actualizar, no ver lo existente enmascarado.
+        if personal_id is None or not self._desbloqueado:
+            # Con la vista bloqueada no se precargan datos ya guardados
+            # (evita exponer datos sensibles); solo se puede escribir/
+            # actualizar, no ver lo existente enmascarado.
             for entrada in self.campos.values():
                 entrada.delete(0, tk.END)
             self.combo_genero.set("")
@@ -180,18 +186,73 @@ class VistaHojaVida(ttk.Frame):
     def _refrescar_lista(self):
         for fila in self.tabla.get_children():
             self.tabla.delete(fila)
-        personas = servicio.listar_personal(self.controlador.rol_actual)
+        personas = servicio.listar_personal_hoja_vida(self._desbloqueado)
         for p in personas:
             estado = "✅ Completa" if p.hoja_vida_completa else "⏳ Pendiente"
             etiqueta_tag = "completa" if p.hoja_vida_completa else "pendiente"
             self.tabla.insert("", "end", values=(
                 p.id, p.nombre_completo, p.cedula, p.telefono, p.ciudad,
                 p.genero, p.edad, estado), tags=(etiqueta_tag,))
-        if self.controlador.rol_actual != "admin":
+        if self._desbloqueado:
             self.etiqueta_permiso.configure(
-                text="🔒 Rol operador: datos sensibles enmascarados y no se precargan al editar.")
+                text=f"🔓 Datos desbloqueados por '{self.controlador.usuario_actual}': "
+                     "viendo información real desencriptada.")
         else:
-            self.etiqueta_permiso.configure(text="🔓 Rol admin: acceso completo, datos desencriptados.")
+            self.etiqueta_permiso.configure(
+                text="🔒 Datos bloqueados: los campos sensibles se muestran enmascarados. "
+                     "Confirma tu contraseña para desbloquear.")
+
+    def _alternar_bloqueo(self):
+        if self._desbloqueado:
+            self._desbloqueado = False
+            self.boton_candado.configure(text="🔒 Desbloquear datos")
+            self._refrescar_lista()
+            self._al_seleccionar_persona()
+            return
+        self._pedir_password_desbloqueo()
+
+    def _pedir_password_desbloqueo(self):
+        ventana = tk.Toplevel(self)
+        ventana.title("Confirmar contraseña")
+        ventana.configure(bg=est.BLANCO)
+        ventana.resizable(False, False)
+        ventana.transient(self.winfo_toplevel())
+        ventana.grab_set()
+
+        interior = ttk.Frame(ventana, style="Tarjeta.TFrame", padding=20)
+        interior.pack(fill="both", expand=True)
+
+        ttk.Label(interior, text="🔒 Confirma tu contraseña", style="Subtitulo.TLabel").pack(
+            anchor="w", pady=(0, 4))
+        ttk.Label(interior,
+                  text=f"Usuario: {self.controlador.usuario_actual}\n"
+                       "Para ver los datos reales de la hoja de vida.",
+                  style="Texto.TLabel", justify="left").pack(anchor="w", pady=(0, 12))
+
+        entrada_password = ttk.Entry(interior, width=30, show="•", font=est.FUENTE_TEXTO)
+        entrada_password.pack(pady=(0, 8), ipady=3)
+        entrada_password.focus_set()
+
+        etiqueta_error = ttk.Label(interior, text="", style="Error.TLabel", wraplength=260)
+        etiqueta_error.pack(anchor="w", pady=(0, 8))
+
+        def _confirmar(_evento=None):
+            password = entrada_password.get()
+            if auth.verificar_password_actual(self.controlador.usuario_actual, password):
+                ventana.destroy()
+                self._desbloqueado = True
+                self.boton_candado.configure(text="🔒 Bloquear de nuevo")
+                self._refrescar_lista()
+            else:
+                etiqueta_error.configure(text="Contraseña incorrecta.")
+
+        entrada_password.bind("<Return>", _confirmar)
+        botones = ttk.Frame(interior, style="Tarjeta.TFrame")
+        botones.pack(fill="x")
+        ttk.Button(botones, text="Desbloquear", style="Primario.TButton",
+                   command=_confirmar).pack(side="left", expand=True, fill="x", padx=(0, 4))
+        ttk.Button(botones, text="Cancelar", style="Secundario.TButton",
+                   command=ventana.destroy).pack(side="left", expand=True, fill="x", padx=(4, 0))
 
     def al_mostrar(self):
         self.etiqueta_mensaje.configure(text="")
@@ -199,5 +260,7 @@ class VistaHojaVida(ttk.Frame):
             entrada.delete(0, tk.END)
         self.combo_genero.set("")
         self.combo_personal.set("")
+        self._desbloqueado = False
+        self.boton_candado.configure(text="🔒 Desbloquear datos")
         self._refrescar_combo_personal()
         self._refrescar_lista()

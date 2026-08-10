@@ -24,7 +24,7 @@ def inicializar_esquema():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL COLLATE NOCASE,
             password_hash TEXT NOT NULL,
             salt TEXT NOT NULL,
             clave_recuperacion_hash TEXT NOT NULL,
