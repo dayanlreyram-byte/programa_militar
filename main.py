@@ -1,3 +1,5 @@
+# PRUEBA DE GITHUB
+
 """
 Punto de entrada de la aplicación.
 Inicializa la base de datos (capa de datos) y lanza la interfaz
