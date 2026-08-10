@@ -15,3 +15,4 @@ DB_PORT = 3306
 DB_USER = "root"
 DB_PASSWORD = "1011094395"       # ← pon aquí tu contraseña si le pusiste una
 DB_NAME = "acceso_militar"
+/////
