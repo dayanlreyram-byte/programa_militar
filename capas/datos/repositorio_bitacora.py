@@ -16,7 +16,6 @@ def registrar_acceso(username: str, exitoso: bool, rol: str):
     conn.commit()
     conn.close()
 
-
 def listar_accesos(limite: int = 200):
     conn = obtener_conexion()
     filas = conn.execute(
