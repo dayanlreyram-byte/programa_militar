@@ -24,41 +24,57 @@ class VistaRegistro(ttk.Frame):
         for hijo in self.interior.winfo_children():
             hijo.destroy()
 
-        ttk.Label(self.interior, text="Crear cuenta de acceso",
+        ttk.Label(self.interior, text="📝 Crear cuenta de acceso",
                   style="Subtitulo.TLabel").pack(anchor="w", pady=(0, 4))
         ttk.Label(self.interior,
                   text="La contraseña se guarda con hashing (PBKDF2-SHA256 + salt),\nnunca en texto plano.",
-                  style="Texto.TLabel", justify="left").pack(anchor="w", pady=(0, 16))
+                  style="Texto.TLabel", justify="left").pack(anchor="w", pady=(0, 14))
+        ttk.Separator(self.interior, orient="horizontal").pack(fill="x", pady=(0, 16))
 
-        ttk.Label(self.interior, text="Usuario", style="Texto.TLabel").pack(anchor="w")
-        self.entrada_usuario = ttk.Entry(self.interior, width=32, font=est.FUENTE_TEXTO)
-        self.entrada_usuario.pack(pady=(2, 12))
+        ttk.Label(self.interior, text="Usuario", style="Texto.TLabel",
+                  font=est.FUENTE_TEXTO_BOLD).pack(anchor="w")
+        self.entrada_usuario = ttk.Entry(self.interior, width=34, font=est.FUENTE_TEXTO)
+        self.entrada_usuario.pack(pady=(4, 18), ipady=3)
 
-        ttk.Label(self.interior, text="Contraseña", style="Texto.TLabel").pack(anchor="w")
-        self.entrada_password = ttk.Entry(self.interior, width=32, show="•", font=est.FUENTE_TEXTO)
-        self.entrada_password.pack(pady=(2, 8))
+        # --- Panel de seguridad: contraseña + confirmación + checklist en vivo ---
+        panel_seguridad = tk.Frame(self.interior, bg=est.GRIS_CLARO,
+                                    highlightbackground=est.DORADO, highlightthickness=1)
+        panel_seguridad.pack(fill="x", pady=(0, 16))
+
+        tk.Label(panel_seguridad, text="🔒 Seguridad de la contraseña", bg=est.GRIS_CLARO,
+                 fg=est.VERDE_OSCURO, font=est.FUENTE_TEXTO_BOLD, anchor="w").pack(
+            fill="x", padx=14, pady=(12, 10))
+
+        tk.Label(panel_seguridad, text="Contraseña", bg=est.GRIS_CLARO,
+                 fg=est.TEXTO_OSCURO, font=est.FUENTE_TEXTO, anchor="w").pack(
+            fill="x", padx=14)
+        self.entrada_password = ttk.Entry(panel_seguridad, width=30, show="•",
+                                           font=est.FUENTE_TEXTO)
+        self.entrada_password.pack(padx=14, pady=(4, 10), ipady=3)
         self.entrada_password.bind("<KeyRelease>", self._actualizar_checklist)
 
-        # --- Checklist en vivo de una contraseña segura ---
-        marco_checklist = tk.Frame(self.interior, bg=est.GRIS_CLARO)
-        marco_checklist.pack(fill="x", pady=(0, 12), ipady=8, ipadx=8)
         self.etiquetas_requisitos = []
         for requisito in auth.REQUISITOS_PASSWORD:
-            etiqueta = tk.Label(marco_checklist, text=f"○ {requisito}", bg=est.GRIS_CLARO,
+            etiqueta = tk.Label(panel_seguridad, text=f"○ {requisito}", bg=est.GRIS_CLARO,
                                  fg=est.TEXTO_OSCURO, font=est.FUENTE_TEXTO, anchor="w")
-            etiqueta.pack(fill="x", padx=8)
+            etiqueta.pack(fill="x", padx=18, pady=1)
             self.etiquetas_requisitos.append(etiqueta)
 
-        ttk.Label(self.interior, text="Confirmar contraseña", style="Texto.TLabel").pack(anchor="w")
-        self.entrada_password2 = ttk.Entry(self.interior, width=32, show="•", font=est.FUENTE_TEXTO)
-        self.entrada_password2.pack(pady=(2, 4))
+        ttk.Separator(panel_seguridad, orient="horizontal").pack(fill="x", padx=14, pady=(12, 10))
+
+        tk.Label(panel_seguridad, text="Confirmar contraseña", bg=est.GRIS_CLARO,
+                 fg=est.TEXTO_OSCURO, font=est.FUENTE_TEXTO, anchor="w").pack(
+            fill="x", padx=14)
+        self.entrada_password2 = ttk.Entry(panel_seguridad, width=30, show="•",
+                                            font=est.FUENTE_TEXTO)
+        self.entrada_password2.pack(padx=14, pady=(4, 14), ipady=3)
 
         self.etiqueta_mensaje = ttk.Label(self.interior, text="", style="Error.TLabel",
-                                           wraplength=280)
-        self.etiqueta_mensaje.pack(anchor="w", pady=(8, 12))
+                                           wraplength=300)
+        self.etiqueta_mensaje.pack(anchor="w", pady=(0, 14))
 
         ttk.Button(self.interior, text="Registrarme", style="Primario.TButton",
-                   command=self._registrar).pack(fill="x", pady=(4, 8))
+                   command=self._registrar).pack(fill="x", pady=(0, 8))
         ttk.Button(self.interior, text="Ya tengo cuenta — Iniciar sesión",
                    style="Secundario.TButton",
                    command=lambda: self.controlador.mostrar_vista("login")).pack(fill="x")

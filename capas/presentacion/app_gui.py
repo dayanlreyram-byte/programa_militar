@@ -31,6 +31,7 @@ class App(tk.Tk):
 
         self.usuario_actual = None
         self.rol_actual = None
+        self.ventana_hoja_vida = None
 
         # --- Contenedor de vistas previas al login (sin sidebar) ---
         self.contenedor_publico = ttk.Frame(self, style="Fondo.TFrame")
@@ -100,7 +101,8 @@ class App(tk.Tk):
 
         self.botones_menu = {}
         self._agregar_boton_menu("personal", "👤  Personal Militar")
-        self._agregar_boton_menu("hoja_vida", "📋  Hoja de Vida")
+        ttk.Button(self.barra_lateral, text="📋  Hoja de Vida", style="Menu.TButton",
+                   command=self.abrir_ventana_hoja_vida).pack(fill="x", padx=10, pady=2)
         self._agregar_boton_menu("verificacion", "🛡️  Verificación de Ingreso")
         self._agregar_boton_menu("admin", "⚙️  Administración")
 
@@ -113,7 +115,6 @@ class App(tk.Tk):
 
         self.vistas_privadas = {
             "personal": VistaPersonal(self.area_contenido, self),
-            "hoja_vida": VistaHojaVida(self.area_contenido, self),
             "verificacion": VistaVerificacion(self.area_contenido, self),
             "admin": VistaAdmin(self.area_contenido, self),
         }
@@ -136,6 +137,26 @@ class App(tk.Tk):
         admin_permitido = permisos.puede_administrar_usuarios(self.rol_actual)
         estado = "normal" if admin_permitido else "disabled"
         self.botones_menu["admin"].configure(state=estado)
+
+    def abrir_ventana_hoja_vida(self):
+        """Abre la Hoja de Vida en una ventana propia (Toplevel), separada
+        del resto de secciones del menú lateral."""
+        if self.ventana_hoja_vida is not None and self.ventana_hoja_vida.winfo_exists():
+            self.ventana_hoja_vida.deiconify()
+            self.ventana_hoja_vida.lift()
+            self.ventana_hoja_vida.focus_force()
+            return
+
+        self.ventana_hoja_vida = tk.Toplevel(self)
+        self.ventana_hoja_vida.title("Hoja de Vida del Personal")
+        self.ventana_hoja_vida.geometry("980x640")
+        self.ventana_hoja_vida.minsize(860, 560)
+        self.ventana_hoja_vida.configure(bg=est.GRIS_CLARO)
+        self.ventana_hoja_vida.transient(self)
+
+        vista = VistaHojaVida(self.ventana_hoja_vida, self)
+        vista.pack(fill="both", expand=True)
+        vista.al_mostrar()
 
     def mostrar_seccion(self, nombre):
         if nombre == "admin" and not permisos.puede_administrar_usuarios(self.rol_actual):
